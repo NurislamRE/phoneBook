@@ -38,6 +38,18 @@ body {
   background-position: center;
 }
 
+.edit-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background-color: transparent;
+  background-image: url("../img/edit.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 .delete.is-visible {
   width: 10px;
   display: table-cell;
