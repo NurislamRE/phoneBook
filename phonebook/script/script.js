@@ -1,6 +1,6 @@
 'use strict';
 
-const data = [
+let data = [
     {
         name: 'Иван',
         surname: 'Петров',
@@ -116,6 +116,7 @@ const data = [
             <th>Действие</th>
             </tr>
         `);
+        thead.style.cssText = 'cursor: pointer';        
 
         const tbody = document.createElement('tbody');
         
@@ -204,6 +205,7 @@ const data = [
             list: table.tbody,
             logo,
             btnAdd: buttonGroup.btns[0],
+            btnDel: buttonGroup.btns[1],
             formOverlay: form.overlay,
             form: form.form,
         }
@@ -211,6 +213,7 @@ const data = [
 
     const createRow = ({name: firstName, surname, phone}) => {
         const tr = document.createElement('tr');
+        tr.classList.add('contact');
 
         const tdDel = document.createElement('td');
         tdDel.classList.add('delete');
@@ -260,11 +263,34 @@ const data = [
         });
     };
 
+    const sortByColumn = property => {                      
+        var sortOrder = 1;
+        if(property[0] === "-") {
+            sortOrder = -1;
+            property = property.substr(1);
+        }
+        return function (a,b) {
+            console.log(a);
+            /* next line works with strings and numbers, 
+             * and you may want to customize it to your needs
+             */
+            var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+            return result * sortOrder;
+        }
+    };    
+
     const init = (selectorApp, title) => {
         const app = document.querySelector(selectorApp);
         const phoneBook = renderPhoneBook(app, title);
 
-        const {list, logo, btnAdd, formOverlay, form} = phoneBook;
+        const {
+            list, 
+            logo, 
+            btnAdd, 
+            formOverlay, 
+            form,
+            btnDel,
+        } = phoneBook;
         
         // Функционал
         const allRow = renderContacts(list, data);
@@ -273,30 +299,87 @@ const data = [
 
         btnAdd.addEventListener('click', () => {
             formOverlay.classList.add('is-visible');
+        });        
+
+        formOverlay.addEventListener('click', e => {   
+            if (e.target === formOverlay || 
+                e.target.closest('.close')) {
+                formOverlay.classList.remove('is-visible');
+            }             
         });
 
-        form.addEventListener('click', event => {
-            event.stopImmediatePropagation();
-        });
-
-        formOverlay.addEventListener('click', () => {
-            formOverlay.classList.remove('is-visible');
-        });
-
-        document.addEventListener('touchstart', e => {
-            console.log(e)
-        });
-
-        document.addEventListener('touchmove', e => {
-                console.log(e)
-        });
-
-        document.addEventListener('touchend', e => {
-                console.log(e)
+        btnDel.addEventListener('click', () => {
+            document.querySelectorAll('.delete').forEach(del => {
+                del.classList.toggle('is-visible');
+            });
         });
         
+        list.addEventListener('click', e => {
+            if (e.target.closest('.del-icon')) {
+                e.target.closest('.contact').remove();
+            }
+        });
+
+        const th = document.querySelectorAll('th');
+
+        th.forEach(item => {
+            item.addEventListener('click', e => {
+                if (e.target.getAttribute('sortable') == null) {
+                    e.target.setAttribute('sortable', 'asc');
+                    sortAsc(e.target);                    
+                }
+                else {               
+                    if (e.target.getAttribute('sortable') === 'desc') {                   
+                        e.target.setAttribute('sortable', 'asc');
+                        sortAsc(e.target);                        
+                    }
+                    else {
+                        e.target.setAttribute('sortable', 'desc');
+                        sortDesc(e.target);
+                    }                                        
+                }
+                
+            });
+
+        });
+        
+        const sortAsc = element => {
+            if (element.textContent === 'Имя') {      
+                data = data.sort((a, b) => (a.name > b.name) ? 1 : -1);                    
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+            if (element.textContent === 'Фамилия') {
+                data = data.sort((a, b) => (a.surname > b.surname) ? 1 : -1);
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+            if (element.textContent === 'Телефон') {
+                data = data.sort((a, b) => (a.phone > b.phone) ? 1 : -1);
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+        };
+
+        const sortDesc = element => {
+            if (element.textContent === 'Имя') {       
+                data = data.sort((a, b) => (a.name > b.name) ? -1 : 1);                    
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+            if (element.textContent === 'Фамилия') {
+                data = data.sort((a, b) => (a.surname > b.surname) ? -1 : 1);
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+            if (element.textContent === 'Телефон') {
+                data = data.sort((a, b) => (a.phone > b.phone) ? -1 : 1);
+                document.querySelector('tbody').textContent = '';
+                renderContacts(list, data);
+            }
+        }
 
     };
 
-    window.phoneBookInit = init;
+    window.phoneBookInit = init;    
 }
