@@ -1,33 +1,29 @@
 'use strict';
 
-let data = [
-    {
-        name: 'Иван',
-        surname: 'Петров',
-        phone: '+79514545454',
-    },
-    {
-        name: 'Игорь',
-        surname: 'Семёнов',
-        phone: '+79999999999',
-    },
-    {
-        name: 'Семён',
-        surname: 'Иванов',
-        phone: '+79800252525',
-    },
-    {
-        name: 'Мария',
-        surname: 'Попова',
-        phone: '+79876543210',
-    },
-];
+// let data = [
+//     {
+//         name: 'Иван',
+//         surname: 'Петров',
+//         phone: '+79514545454',
+//     },
+//     {
+//         name: 'Игорь',
+//         surname: 'Семёнов',
+//         phone: '+79999999999',
+//     },
+//     {
+//         name: 'Семён',
+//         surname: 'Иванов',
+//         phone: '+79800252525',
+//     },
+//     {
+//         name: 'Мария',
+//         surname: 'Попова',
+//         phone: '+79876543210',
+//     },
+// ];
 
 {
-    const addContactData = contact => {
-        data.push(contact)
-    };
-
     const createContainer = () => {
         const container = document.createElement('div');
         container.classList.add('container');
@@ -299,7 +295,10 @@ let data = [
         
         list.addEventListener('click', e => {
             if (e.target.closest('.del-icon')) {
+                const phoneNumber = e.target.closest('.contact').children[3].textContent;
+                removeStorage('contacts', phoneNumber);
                 e.target.closest('.contact').remove();
+                
             }
         });
     };
@@ -320,10 +319,107 @@ let data = [
             closeModal();
         })
     }
+    
+    const sortAsc = (list, data, element) => {
+        let sorteredData;
+        if (element.textContent === 'Имя') {      
+            sorteredData = data.sort((a, b) => (a.name > b.name) ? 1 : -1);                    
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);            
+        }
+        if (element.textContent === 'Фамилия') {
+            sorteredData = data.sort((a, b) => (a.surname > b.surname) ? 1 : -1);
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);
+            
+        }
+        if (element.textContent === 'Телефон') {
+            sorteredData = data.sort((a, b) => (a.phone > b.phone) ? 1 : -1);
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);
+        }
 
+        localStorage.removeItem('contacts');
+        localStorage.setItem('contacts', JSON.stringify(sorteredData));
+    };
+
+    const sortDesc = (list, data, element) => {
+        let sorteredData;
+        if (element.textContent === 'Имя') {       
+            sorteredData = data.sort((a, b) => (a.name > b.name) ? -1 : 1);                    
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);
+        }
+        if (element.textContent === 'Фамилия') {
+            sorteredData = data.sort((a, b) => (a.surname > b.surname) ? -1 : 1);
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);
+        }
+        if (element.textContent === 'Телефон') {
+            sorteredData = data.sort((a, b) => (a.phone > b.phone) ? -1 : 1);
+            document.querySelector('tbody').textContent = '';
+            renderContacts(list, sorteredData);
+        }
+
+        localStorage.removeItem('contacts');
+        localStorage.setItem('contacts', JSON.stringify(sorteredData));
+    }
+
+    const sort = (list, th) => {        
+        const data = getStorage('contacts');
+        th.forEach(item => {
+            item.addEventListener('click', e => {
+                localStorage.removeItem('sortColumnInfo');
+                setStorage('sortColumnInfo', e.target.textContent);
+                if (e.target.getAttribute('sortable') == null) {
+                    e.target.setAttribute('sortable', 'asc');
+                    sortAsc(list, data, e.target);                    
+                } else {               
+                    if (e.target.getAttribute('sortable') === 'desc') {                   
+                        e.target.setAttribute('sortable', 'asc');
+                        sortAsc(list, data, e.target);                        
+                    }
+                    else {
+                        e.target.setAttribute('sortable', 'desc');
+                        sortDesc(list, data, e.target);
+                    }                                        
+                }
+                
+            });
+
+        });
+    };
+
+    const getStorage = key => {
+        let data;
+        try {
+            data = JSON.parse(localStorage.getItem(key));
+        } catch {
+            data = data;
+        }       
+        return data ?? [];
+    };
+
+    const setStorage = (key, contacts) => {
+        const dataFromStorage = getStorage(key);
+        dataFromStorage.push(contacts);
+        localStorage.setItem(key, JSON.stringify(dataFromStorage));
+    };    
+
+    const removeStorage = (key, phone) => {
+        const contacts = getStorage(key);
+        const filteredContacts = contacts.filter(item => item.phone != phone);
+        localStorage.setItem(key, JSON.stringify(filteredContacts));
+    };
+
+    const addContactData = contact => {
+        setStorage('contacts', contact);
+    };
+    
     const init = (selectorApp, title) => {
         const app = document.querySelector(selectorApp);
         const phoneBook = renderPhoneBook(app, title);
+        const th = document.querySelectorAll('th');
 
         const {
             list, 
@@ -335,73 +431,14 @@ let data = [
         } = phoneBook;
         
         // Функционал
-        const allRow = renderContacts(list, data);
+        //localStorage.setItem('contacts', JSON.stringify(data));
+        const allRow = renderContacts(list, getStorage('contacts'));
         const {closeModal} =  modalControl(btnAdd, formOverlay);
 
         hoverRow(allRow, logo);        
         deleteControl(btnDel, list);
-        formControl(form, list, closeModal);
-        
-
-        const th = document.querySelectorAll('th');
-
-        th.forEach(item => {
-            item.addEventListener('click', e => {
-                if (e.target.getAttribute('sortable') == null) {
-                    e.target.setAttribute('sortable', 'asc');
-                    sortAsc(e.target);                    
-                }
-                else {               
-                    if (e.target.getAttribute('sortable') === 'desc') {                   
-                        e.target.setAttribute('sortable', 'asc');
-                        sortAsc(e.target);                        
-                    }
-                    else {
-                        e.target.setAttribute('sortable', 'desc');
-                        sortDesc(e.target);
-                    }                                        
-                }
-                
-            });
-
-        });
-        
-        const sortAsc = element => {
-            if (element.textContent === 'Имя') {      
-                data = data.sort((a, b) => (a.name > b.name) ? 1 : -1);                    
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-            if (element.textContent === 'Фамилия') {
-                data = data.sort((a, b) => (a.surname > b.surname) ? 1 : -1);
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-            if (element.textContent === 'Телефон') {
-                data = data.sort((a, b) => (a.phone > b.phone) ? 1 : -1);
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-        };
-
-        const sortDesc = element => {
-            if (element.textContent === 'Имя') {       
-                data = data.sort((a, b) => (a.name > b.name) ? -1 : 1);                    
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-            if (element.textContent === 'Фамилия') {
-                data = data.sort((a, b) => (a.surname > b.surname) ? -1 : 1);
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-            if (element.textContent === 'Телефон') {
-                data = data.sort((a, b) => (a.phone > b.phone) ? -1 : 1);
-                document.querySelector('tbody').textContent = '';
-                renderContacts(list, data);
-            }
-        }
-
+        formControl(form, list, closeModal);    
+        sort(list, th);           
     };
 
     window.phoneBookInit = init;    
